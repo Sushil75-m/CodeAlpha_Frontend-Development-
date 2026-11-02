@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interactive Gallery</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              900: '#0c4a6e',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Inter Font -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+    
+    /* Glassmorphism effects */
+    .glass-card {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    
+    .glass-modal {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+    
+    /* Grid transition classes */
+    .gallery-item {
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease, filter 0.3s ease;
+    }
+    
+    .gallery-item.hide {
+      opacity: 0;
+      transform: scale(0.9);
+      pointer-events: none;
+      position: absolute;
+      width: 0;
+      height: 0;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-sky-500 selection:text-white">
+
+  <!-- Header Header & Navigation -->
+  <header class="sticky top-0 z-30 glass-card border-b border-slate-800/80 px-4 lg:px-8 py-4 mb-8">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+      <!-- Logo / Title -->
+      <div class="flex items-center gap-3">
+        <div class="p-2.5 bg-gradient-to-tr from-sky-500 to-indigo-500 rounded-xl shadow-lg shadow-sky-500/20 text-white">
+          <i data-lucide="aperture" class="w-6 h-6 animate-spin-slow"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+            Gallery
+          </h1>
+          <p class="text-xs text-slate-400">Interactive Visual Showcase</p>
+        </div>
+      </div>
+
+      <!-- Controls: Category Filter Bar & Search -->
+      <div class="flex flex-wrap items-center justify-center gap-2 w-full md:w-auto">
+        <!-- Search Input -->
+        <div class="relative w-full sm:w-64">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+          <input type="text" id="searchInput" placeholder="Search by title or tags..." 
+                 class="w-full bg-slate-900/80 border border-slate-700/60 rounded-lg pl-9 pr-4 py-2 text-sm text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500 transition-all">
+        </div>
+      </div>
+    </div>
+
+    <!-- Category Tabs -->
+    <div class="max-w-7xl mx-auto mt-6 flex items-center justify-center sm:justify-start gap-2 overflow-x-auto pb-1 no-scrollbar" id="categoryFilters">
+      <button data-category="all" class="filter-btn active px-4 py-2 rounded-lg text-sm font-medium transition-all bg-sky-500 text-white shadow-md shadow-sky-500/25">
+        All Media
+      </button>
+      <button data-category="nature" class="filter-btn px-4 py-2 rounded-lg text-sm font-medium transition-all bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-800">
+        Nature
+      </button>
+      <button data-category="architecture" class="filter-btn px-4 py-2 rounded-lg text-sm font-medium transition-all bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-800">
+        Architecture
+      </button>
+      <button data-category="travel" class="filter-btn px-4 py-2 rounded-lg text-sm font-medium transition-all bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-800">
+        Travel
+      </button>
+      <button data-category="technology" class="filter-btn px-4 py-2 rounded-lg text-sm font-medium transition-all bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-800">
+        Technology
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="flex-grow max-w-7xl w-full mx-auto px-4 lg:px-8 mb-12">
+    <!-- Gallery Grid -->
+    <div id="galleryGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <!-- Items dynamically populated via JavaScript -->
+    </div>
+
+    <!-- Empty State Container -->
+    <div id="emptyState" class="hidden flex-col items-center justify-center py-20 text-center">
+      <div class="p-4 bg-slate-900 rounded-full border border-slate-800 text-slate-500 mb-4">
+        <i data-lucide="image-off" class="w-10 h-10"></i>
+      </div>
+      <h3 class="text-lg font-semibold text-slate-300">No images found</h3>
+      <p class="text-sm text-slate-500 mt-1 max-w-sm">Try adjusting your category filter or search query to find what you're looking for.</p>
+      <button id="resetFiltersBtn" class="mt-4 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-sky-400 text-sm font-medium rounded-lg transition-colors border border-slate-700">
+        Reset Search & Filters
+      </button>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800/80 glass-card py-6 px-4 text-center text-xs text-slate-400">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      <p>© 2026 Lumina Gallery. Curated High-Definition Photography.</p>
+      <div class="flex items-center gap-4">
+        <span class="flex items-center gap-1.5"><i data-lucide="keyboard" class="w-4 h-4 text-sky-400"></i> Use ← → and Esc to navigate</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Lightbox Modal -->
+  <div id="lightbox" class="fixed inset-0 z-50 glass-modal flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+    <!-- Close Button -->
+    <button id="closeLightbox" aria-label="Close modal" class="absolute top-5 right-5 z-20 p-3 text-slate-400 hover:text-white bg-slate-900/70 hover:bg-slate-800/90 rounded-full border border-slate-700/60 transition-all focus:outline-none focus:ring-2 focus:ring-sky-500">
+      <i data-lucide="x" class="w-6 h-6"></i>
+    </button>
+
+    <!-- Navigation Buttons -->
+    <button id="prevBtn" aria-label="Previous image" class="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-3 text-slate-300 hover:text-white bg-slate-900/70 hover:bg-slate-800/90 rounded-full border border-slate-700/60 transition-all focus:outline-none focus:ring-2 focus:ring-sky-500">
+      <i data-lucide="chevron-left" class="w-6 h-6"></i>
+    </button>
+    <button id="nextBtn" aria-label="Next image" class="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-3 text-slate-300 hover:text-white bg-slate-900/70 hover:bg-slate-800/90 rounded-full border border-slate-700/60 transition-all focus:outline-none focus:ring-2 focus:ring-sky-500">
+      <i data-lucide="chevron-right" class="w-6 h-6"></i>
+    </button>
+
+    <!-- Main Container -->
+    <div class="relative w-full max-w-5xl max-h-[90vh] mx-4 flex flex-col md:flex-row bg-slate-900/90 rounded-2xl border border-slate-800 shadow-2xl overflow-hidden">
+      
+      <!-- Image Display Area -->
+      <div class="relative flex-1 bg-black/60 flex items-center justify-center p-4 min-h-[300px] md:min-h-[500px] overflow-hidden group">
+        <!-- Loading Spinner -->
+        <div id="lightboxLoader" class="absolute inset-0 flex items-center justify-center bg-slate-950/80 z-10 transition-opacity">
+          <i data-lucide="loader-2" class="w-8 h-8 text-sky-500 animate-spin"></i>
+        </div>
+        
+        <!-- Lightbox Image -->
+        <img id="lightboxImg" src="" alt="Full view" class="max-h-[65vh] md:max-h-[75vh] max-w-full object-contain rounded-lg transition-all duration-300">
+      </div>
+
+      <!-- Info & Live Controls Sidebar -->
+      <div class="w-full md:w-80 bg-slate-900/95 border-t md:border-t-0 md:border-l border-slate-800 p-6 flex flex-col justify-between">
+        <!-- Top Info -->
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <span id="lightboxCategory" class="px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-sky-400 bg-sky-950/60 rounded-md border border-sky-800/40">
+              Category
+            </span>
+            <span id="lightboxCounter" class="text-xs font-mono text-slate-500">
+              1 / 12
+            </span>
+          </div>
+          <h2 id="lightboxTitle" class="text-xl font-bold text-white tracking-tight mb-2">Image Title</h2>
+          <p id="lightboxDesc" class="text-sm text-slate-400 leading-relaxed mb-4">Detailed image description goes here.</p>
+          
+          <div class="flex flex-wrap gap-1.5 mb-6" id="lightboxTags">
+            <!-- Tags rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- Live Visual Filters-->
+        <div class="border-t border-slate-800/80 pt-4 mt-2">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+              <i data-lucide="sliders" class="w-3.5 h-3.5 text-sky-400"></i> Image FX Adjustments
+            </h3>
+            <button id="resetFilters" class="text-xs text-sky-400 hover:text-sky-300 hover:underline">Reset</button>
+          </div>
+          
+          <div class="space-y-3">
+            <!-- Grayscale Slider -->
+            <div>
+              <div class="flex justify-between text-xs text-slate-400 mb-1">
+                <span>Grayscale</span>
+                <span id="valGrayscale">0%</span>
+              </div>
+              <input type="range" id="filterGrayscale" min="0" max="100" value="0" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-sky-500">
+            </div>
+
+            <!-- Brightness Slider -->
+            <div>
+              <div class="flex justify-between text-xs text-slate-400 mb-1">
+                <span>Brightness</span>
+                <span id="valBrightness">100%</span>
+              </div>
+              <input type="range" id="filterBrightness" min="50" max="150" value="100" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-sky-500">
+            </div>
+
+            <!-- Sepia Slider -->
+            <div>
+              <div class="flex justify-between text-xs text-slate-400 mb-1">
+                <span>Sepia</span>
+                <span id="valSepia">0%</span>
+              </div>
+              <input type="range" id="filterSepia" min="0" max="100" value="0" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-sky-500">
+            </div>
+
+            <!-- Blur Slider -->
+            <div>
+              <div class="flex justify-between text-xs text-slate-400 mb-1">
+                <span>Blur</span>
+                <span id="valBlur">0px</span>
+              </div>
+              <input type="range" id="filterBlur" min="0" max="10" value="0" step="0.5" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-sky-500">
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Logic -->
+  <script>
+    // Sample Image Dataset
+    const galleryData = [
+      {
+        id: 1,
+        title: "Alpine Mist Peaks",
+        category: "nature",
+        description: "Serene mountain peaks covered in morning mist and dense pine forests.",
+        url: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80",
+        thumb: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80",
+        tags: ["Mountain", "Landscape", "Mist"]
+      },
+      {
+        id: 2,
+        title: "Cyberpunk Metropolis",
+        category: "architecture",
+        description: "Illuminated neon skyscrapers reflecting off modern futuristic architecture.",
+        url: "https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1200&q=80",
+        thumb: "https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=600&q=80",
+        tags: ["City", "Architecture", "Night"]
+      },
+      {
+        id: 3,
+        title: "Coastal Cliff Vista",
+        category: "travel",
+        description: "Dramatic ocean waves crashing against high dramatic coastal cliffs.",
+        url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80",
+        thumb: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80",
+        tags: ["Ocean", "Beach", "Travel"]
+      },
+      {
+        id: 4,
+        title: "Quantum Processor Node",
+        category: "technology",
+        description: "Close up of high-tech silicon wafer micro-circuitry and optic fiber nodes.",
+        url: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80",
+        thumb: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80",
+        tags: ["Tech", "Circuit", "Future"]
+      },
+      {
+        id: 5,
+        title: "Emerald Forest Path",
+        category: "nature",
+        description: "Sunlight filtering through lush forest canopy onto a peaceful walking trail.",
+        url: "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1200&q=80",
+        thumb: "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=600&q=80",
+        tags: ["Forest", "Trees", "Green"]
+      },
+      {
+        id: 6,
+        title: "Minimalist Geometry",
+        category: "architecture",
+        description: "Clean architectural lines and stark shadows on modern concrete structural design.",
+        url: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1200&q=80",
+        thumb: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=600&q=80",
+        tags: ["Design", "Structure", "Minimal"]
+      },
+      {
+        id: 7,
+        title: "Venetian Waterways",
+        category: "travel",
+        description: "Historic Italian buildings lining tranquil gondola canal routes.",
+        url: "https://images.unsplash.com/photo-1514890547357-a9ee288728e0?auto=format&fit=crop&w=1200&q=80",
+        thumb: "https://images.unsplash.com/photo-1514890547357-a9ee288728e0?auto=format&fit=crop&w=600&q=80",
+        tags: ["Venice", "Europe", "Canal"]
+      },
+      {
+        id: 8,
+        title: "Digital Data Matrix",
+        category: "technology",
+        description: "Abstract visualization of cloud data networks and interconnected servers.",
+        url: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=1200&q=80",
+        thumb: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=600&q=80",
+        tags: ["Data", "Code", "Network"]
+      }
+    ];
+
+    // State Management
+    let currentCategory = 'all';
+    let searchQuery = '';
+    let filteredIndices = [];
+    let currentFilteredIndex = 0;
+
+    // DOM Elements
+    const galleryGrid = document.getElementById('galleryGrid');
+    const emptyState = document.getElementById('emptyState');
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const searchInput = document.getElementById('searchInput');
+    const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+
+    // Lightbox DOM Elements
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightboxImg');
+    const lightboxTitle = document.getElementById('lightboxTitle');
+    const lightboxDesc = document.getElementById('lightboxDesc');
+    const lightboxCategory = document.getElementById('lightboxCategory');
+    const lightboxCounter = document.getElementById('lightboxCounter');
+    const lightboxTags = document.getElementById('lightboxTags');
+    const lightboxLoader = document.getElementById('lightboxLoader');
+    const closeLightboxBtn = document.getElementById('closeLightbox');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+    // Image FX Controls
+    const filterGrayscale = document.getElementById('filterGrayscale');
+    const filterBrightness = document.getElementById('filterBrightness');
+    const filterSepia = document.getElementById('filterSepia');
+    const filterBlur = document.getElementById('filterBlur');
+    const resetFilters = document.getElementById('resetFilters');
+
+    const valGrayscale = document.getElementById('valGrayscale');
+    const valBrightness = document.getElementById('valBrightness');
+    const valSepia = document.getElementById('valSepia');
+    const valBlur = document.getElementById('valBlur');
+
+    // Initialize Gallery
+    function initGallery() {
+      renderGalleryItems();
+      setupEventListeners();
+      lucide.createIcons();
+    }
+
+    // Render Gallery Items into DOM
+    function renderGalleryItems() {
+      galleryGrid.innerHTML = '';
+      
+      galleryData.forEach((item, index) => {
+        const card = document.createElement('div');
+        card.className = `gallery-item group relative glass-card rounded-xl overflow-hidden cursor-pointer border border-slate-800 shadow-md hover:shadow-2xl hover:border-sky-500/50`;
+        card.dataset.index = index;
+        card.dataset.category = item.category;
+
+        card.innerHTML = `
+          <div class="relative aspect-4/3 w-full overflow-hidden bg-slate-900">
+            <img src="${item.thumb}" alt="${item.title}" loading="lazy" 
+                 class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+            
+            <!-- Hover Overlay -->
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
+              <span class="text-xs font-semibold uppercase tracking-wider text-sky-400 mb-1">${item.category}</span>
+              <h3 class="text-base font-bold text-white leading-snug">${item.title}</h3>
+              <div class="flex items-center gap-2 mt-2 text-xs text-slate-300">
+                <span class="flex items-center gap-1"><i data-lucide="eye" class="w-3.5 h-3.5 text-sky-400"></i> View</span>
+              </div>
+            </div>
+
+            <!-- Quick Category Pill -->
+            <div class="absolute top-3 left-3 bg-slate-950/70 backdrop-blur-md px-2.5 py-1 rounded-md border border-slate-700/50 text-[10px] font-semibold text-slate-300 uppercase tracking-wider group-hover:opacity-0 transition-opacity">
+              ${item.category}
+            </div>
+          </div>
+        `;
+
+        card.addEventListener('click', () => openLightbox(index));
+        galleryGrid.appendChild(card);
+      });
+
+      applyFilters();
+    }
+
+    // Filter Logic
+    function applyFilters() {
+      const items = document.querySelectorAll('.gallery-item');
+      filteredIndices = [];
+      let visibleCount = 0;
+
+      items.forEach((item, index) => {
+        const data = galleryData[index];
+        const matchesCategory = currentCategory === 'all' || data.category === currentCategory;
+        const matchesSearch = data.title.toLowerCase().includes(searchQuery) ||
+                              data.description.toLowerCase().includes(searchQuery) ||
+                              data.tags.some(t => t.toLowerCase().includes(searchQuery));
+
+        if (matchesCategory && matchesSearch) {
+          item.classList.remove('hide');
+          filteredIndices.push(index);
+          visibleCount++;
+        } else {
+          item.classList.add('hide');
+        }
+      });
+
+      // Handle Empty State
+      if (visibleCount === 0) {
+        emptyState.classList.remove('hidden');
+        emptyState.classList.add('flex');
+      } else {
+        emptyState.classList.add('hidden');
+        emptyState.classList.remove('flex');
+      }
+    }
+
+    // Lightbox Logic
+    function openLightbox(originalIndex) {
+      currentFilteredIndex = filteredIndices.indexOf(originalIndex);
+      if (currentFilteredIndex === -1) currentFilteredIndex = 0;
+
+      updateLightboxContent();
+
+      lightbox.classList.remove('opacity-0', 'pointer-events-none');
+      document.body.style.overflow = 'hidden'; // Prevent page scroll
+    }
+
+    function closeLightbox() {
+      lightbox.classList.add('opacity-0', 'pointer-events-none');
+      document.body.style.overflow = 'auto';
+      resetImageFilters();
+    }
+
+    function updateLightboxContent() {
+      const itemIndex = filteredIndices[currentFilteredIndex];
+      const item = galleryData[itemIndex];
+
+      if (!item) return;
+
+      // Show loader
+      lightboxLoader.style.opacity = '1';
+
+      // Set image source
+      lightboxImg.src = item.url;
+      lightboxImg.alt = item.title;
+
+      lightboxImg.onload = () => {
+        lightboxLoader.style.opacity = '0';
+      };
+
+      // Set Metadata
+      lightboxTitle.textContent = item.title;
+      lightboxDesc.textContent = item.description;
+      lightboxCategory.textContent = item.category;
+      lightboxCounter.textContent = `${currentFilteredIndex + 1} / ${filteredIndices.length}`;
+
+      // Render Tags
+      lightboxTags.innerHTML = item.tags.map(t => 
+        `<span class="px-2 py-0.5 bg-slate-800 text-slate-300 rounded text-xs border border-slate-700">#${t}</span>`
+      ).join('');
+
+      // Apply currently set image FX values
+      applyImageFX();
+    }
+
+    function nextImage() {
+      if (filteredIndices.length === 0) return;
+      currentFilteredIndex = (currentFilteredIndex + 1) % filteredIndices.length;
+      updateLightboxContent();
+    }
+
+    function prevImage() {
+      if (filteredIndices.length === 0) return;
+      currentFilteredIndex = (currentFilteredIndex - 1 + filteredIndices.length) % filteredIndices.length;
+      updateLightboxContent();
+    }
+
+    // Image Filter Controls (Bonus Feature)
+    function applyImageFX() {
+      const gs = filterGrayscale.value;
+      const br = filterBrightness.value;
+      const sp = filterSepia.value;
+      const bl = filterBlur.value;
+
+      valGrayscale.textContent = `${gs}%`;
+      valBrightness.textContent = `${br}%`;
+      valSepia.textContent = `${sp}%`;
+      valBlur.textContent = `${bl}px`;
+
+      lightboxImg.style.filter = `grayscale(${gs}%) brightness(${br}%) sepia(${sp}%) blur(${bl}px)`;
+    }
+
+    function resetImageFilters() {
+      filterGrayscale.value = 0;
+      filterBrightness.value = 100;
+      filterSepia.value = 0;
+      filterBlur.value = 0;
+      applyImageFX();
+    }
+
+    // Event Listeners Setup
+    function setupEventListeners() {
+      // Category Buttons
+      filterButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          filterButtons.forEach(b => {
+            b.classList.remove('bg-sky-500', 'text-white', 'shadow-md', 'shadow-sky-500/25');
+            b.classList.add('bg-slate-900/60', 'text-slate-400', 'hover:text-slate-200');
+          });
+          e.target.classList.add('bg-sky-500', 'text-white', 'shadow-md', 'shadow-sky-500/25');
+          e.target.classList.remove('bg-slate-900/60', 'text-slate-400');
+
+          currentCategory = e.target.dataset.category;
+          applyFilters();
+        });
+      });
+
+      // Search Field Input
+      searchInput.addEventListener('input', (e) => {
+        searchQuery = e.target.value.toLowerCase().trim();
+        applyFilters();
+      });
+
+      // Reset empty state button
+      resetFiltersBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        searchQuery = '';
+        currentCategory = 'all';
+        filterButtons[0].click();
+      });
+
+      // Lightbox Controls
+      closeLightboxBtn.addEventListener('click', closeLightbox);
+      nextBtn.addEventListener('click', nextImage);
+      prevBtn.addEventListener('click', prevImage);
+
+      // Lightbox Backdrop Click Close
+      lightbox.addEventListener('click', (e) => {
+        if (e.target === lightbox) {
+          closeLightbox();
+        }
+      });
+
+      // Keyboard Controls
+      document.addEventListener('keydown', (e) => {
+        if (lightbox.classList.contains('opacity-0')) return;
+
+        if (e.key === 'Escape') closeLightbox();
+        if (e.key === 'ArrowRight') nextImage();
+        if (e.key === 'ArrowLeft') prevImage();
+      });
+
+      // FX Sliders Event Listeners
+      [filterGrayscale, filterBrightness, filterSepia, filterBlur].forEach(slider => {
+        slider.addEventListener('input', applyImageFX);
+      });
+      resetFilters.addEventListener('click', resetImageFilters);
+    }
+
+    // Run initialization on DOM Content Loaded
+    window.addEventListener('DOMContentLoaded', initGallery);
+  </script>
+</body>
+</html>
