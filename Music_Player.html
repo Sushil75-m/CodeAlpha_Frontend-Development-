@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harmonia - Premium Music Player</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f5ff',
+                            100: '#e5edff',
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            accent: '#ec4899',
+                        }
+                    },
+                    animation: {
+                        'spin-slow': 'spin 20s linear infinite',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'bounce-subtle': 'bounceSubtle 2s infinite',
+                    },
+                    keyframes: {
+                        bounceSubtle: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-4px)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom styling for range sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+        
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        /* Track slider styling */
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            border-radius: 9999px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 14px;
+            width: 14px;
+            border-radius: 50%;
+            background: #ffffff;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -4px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            transition: transform 0.15s ease, background-color 0.15s ease;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.3);
+        }
+
+        /* Glassmorphism utility */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .dark .glass-panel {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.4);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(156, 163, 175, 0.7);
+        }
+
+        /* Visualizer Bar Animations */
+        .v-bar {
+            transition: height 0.15s ease;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:from-slate-950 dark:via-indigo-950 dark:to-slate-900 min-h-screen text-slate-800 dark:text-slate-100 font-sans transition-colors duration-500 flex items-center justify-center p-3 sm:p-6 select-none overflow-x-hidden">
+
+    <!-- Ambient Glowing Background Blobs -->
+    <div class="fixed top-1/4 left-1/4 w-72 sm:w-96 h-72 sm:h-96 bg-indigo-500/30 dark:bg-indigo-600/20 rounded-full blur-3xl pointer-events-none -z-10 animate-pulse-slow"></div>
+    <div class="fixed bottom-1/4 right-1/4 w-72 sm:w-96 h-72 sm:h-96 bg-pink-500/30 dark:bg-pink-600/20 rounded-full blur-3xl pointer-events-none -z-10 animate-pulse-slow" style="animation-delay: 1.5s;"></div>
+
+    <!-- Main Container -->
+    <div class="w-full max-w-5xl glass-panel rounded-3xl shadow-2xl overflow-hidden transition-all duration-300 grid grid-cols-1 lg:grid-cols-12 min-h-[640px]">
+        
+        <!-- LEFT COLUMN: Main Player Display -->
+        <div class="lg:col-span-7 p-6 sm:p-8 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-200/50 dark:border-slate-800/60 relative">
+            
+            <!-- Top Bar Header -->
+            <div class="flex items-center justify-between w-full mb-6">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-500 to-brand-accent flex items-center justify-center shadow-md text-white font-bold text-xl">
+                        <i class="fa-solid fa-compact-disc animate-spin-slow"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg leading-tight tracking-wide bg-gradient-to-r from-brand-600 to-brand-accent bg-clip-text text-transparent">HARMONIA</h1>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Audio Experience</p>
+                    </div>
+                </div>
+
+                <!-- Header Actions -->
+                <div class="flex items-center space-x-2">
+                    <button id="themeToggleBtn" class="w-10 h-10 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-all duration-200" title="Toggle Light/Dark Theme">
+                        <i id="themeIcon" class="fa-solid fa-moon text-lg"></i>
+                    </button>
+                    <button id="favoriteBtn" class="w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:text-pink-500 hover:bg-pink-500/10 transition-all duration-200" title="Add to Favorites">
+                        <i class="fa-solid fa-heart text-lg"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Album Artwork Display -->
+            <div class="my-auto py-4 flex flex-col items-center">
+                <div class="relative group">
+                    <!-- Glow Behind Album -->
+                    <div id="artGlow" class="absolute -inset-2 bg-gradient-to-r from-brand-500 to-brand-accent rounded-full blur-xl opacity-40 group-hover:opacity-75 transition duration-700"></div>
+                    
+                    <!-- Circular Disc / Cover -->
+                    <div id="albumCoverWrapper" class="relative w-48 h-48 sm:w-64 sm:h-64 rounded-full border-4 border-white/80 dark:border-slate-800/80 shadow-2xl overflow-hidden transition-transform duration-500 flex items-center justify-center bg-slate-900">
+                        <img id="albumArt" src="" alt="Album Art" class="w-full h-full object-cover transition-transform duration-700">
+                        
+                        <!-- Center Vinyl Disc Hole Effect -->
+                        <div class="absolute inset-0 bg-black/10 flex items-center justify-center pointer-events-none">
+                            <div class="w-8 h-8 rounded-full bg-slate-900 border-2 border-white/50 shadow-inner"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Song Info Header -->
+                <div class="text-center mt-6 w-full px-4">
+                    <div class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-brand-500/10 text-brand-600 dark:text-brand-400 mb-2 border border-brand-500/20">
+                        <span id="genreBadge">Now Playing</span>
+                    </div>
+                    <h2 id="songTitle" class="text-2xl sm:text-3xl font-extrabold tracking-tight truncate max-w-md mx-auto text-slate-900 dark:text-white">Select a Track</h2>
+                    <p id="artistName" class="text-sm sm:text-base text-slate-500 dark:text-slate-400 font-medium mt-1 truncate max-w-xs mx-auto">Artist Name</p>
+                </div>
+
+                <!-- Simulated Audio Spectrum Visualizer -->
+                <div id="visualizer" class="flex items-end justify-center space-x-1.5 h-8 mt-4 opacity-60">
+                    <div class="v-bar w-1 bg-brand-500 rounded-full h-2"></div>
+                    <div class="v-bar w-1 bg-brand-500 rounded-full h-4"></div>
+                    <div class="v-bar w-1 bg-brand-accent rounded-full h-7"></div>
+                    <div class="v-bar w-1 bg-brand-accent rounded-full h-3"></div>
+                    <div class="v-bar w-1 bg-brand-500 rounded-full h-6"></div>
+                    <div class="v-bar w-1 bg-brand-500 rounded-full h-2"></div>
+                    <div class="v-bar w-1 bg-brand-accent rounded-full h-5"></div>
+                </div>
+            </div>
+
+            <!-- Playback Controls & Progress Bar Section -->
+            <div class="w-full mt-4 space-y-4">
+                
+                <!-- Progress Bar Slider -->
+                <div>
+                    <div class="relative w-full flex items-center">
+                        <input type="range" id="progressBar" value="0" min="0" max="100" class="w-full z-10 accent-brand-500">
+                    </div>
+                    <div class="flex justify-between text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1.5 px-0.5">
+                        <span id="currentTime">00:00</span>
+                        <span id="totalDuration">00:00</span>
+                    </div>
+                </div>
+
+                <!-- Primary Playback Buttons -->
+                <div class="flex items-center justify-between px-2 sm:px-6">
+                    <!-- Shuffle Button -->
+                    <button id="shuffleBtn" class="text-slate-400 hover:text-brand-500 dark:hover:text-brand-400 transition-colors duration-200 text-lg relative" title="Shuffle Playlist">
+                        <i class="fa-solid fa-shuffle"></i>
+                        <span id="shuffleIndicator" class="absolute -top-1 -right-1.5 w-2 h-2 bg-brand-500 rounded-full hidden"></span>
+                    </button>
+
+                    <div class="flex items-center space-x-4 sm:space-x-6">
+                        <!-- Previous Button -->
+                        <button id="prevBtn" class="w-11 h-11 rounded-full flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800/60 transition-all duration-200 active:scale-95" title="Previous Track">
+                            <i class="fa-solid fa-backward-step text-xl"></i>
+                        </button>
+
+                        <!-- Play/Pause Main Toggle -->
+                        <button id="playPauseBtn" class="w-16 h-16 rounded-full bg-gradient-to-tr from-brand-600 to-brand-accent hover:opacity-95 text-white flex items-center justify-center shadow-lg shadow-brand-500/30 hover:scale-105 active:scale-95 transition-all duration-200" title="Play / Pause">
+                            <i id="playIcon" class="fa-solid fa-play text-2xl ml-1"></i>
+                        </button>
+
+                        <!-- Next Button -->
+                        <button id="nextBtn" class="w-11 h-11 rounded-full flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800/60 transition-all duration-200 active:scale-95" title="Next Track">
+                            <i class="fa-solid fa-forward-step text-xl"></i>
+                        </button>
+                    </div>
+
+                    <!-- Repeat Button -->
+                    <button id="repeatBtn" class="text-slate-400 hover:text-brand-500 dark:hover:text-brand-400 transition-colors duration-200 text-lg relative" title="Repeat Mode">
+                        <i id="repeatIcon" class="fa-solid fa-repeat"></i>
+                        <span id="repeatIndicator" class="absolute -top-1 -right-1.5 w-2 h-2 bg-brand-500 rounded-full hidden"></span>
+                    </button>
+                </div>
+
+                <!-- Volume Bar Control -->
+                <div class="flex items-center space-x-3 pt-2 px-4 max-w-xs mx-auto">
+                    <button id="muteBtn" class="text-slate-500 hover:text-brand-500 dark:text-slate-400 transition-colors" title="Mute/Unmute">
+                        <i id="volumeIcon" class="fa-solid fa-volume-high text-sm"></i>
+                    </button>
+                    <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.8" class="w-full accent-brand-500">
+                    <span id="volumePercent" class="text-xs font-semibold text-slate-500 dark:text-slate-400 min-w-[32px] text-right">80%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Interactive Playlist & Search -->
+        <div class="lg:col-span-5 p-6 sm:p-8 flex flex-col justify-between bg-slate-50/40 dark:bg-slate-900/40">
+            <div>
+                <!-- Playlist Header & Count -->
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="font-bold text-xl text-slate-900 dark:text-white">Up Next</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400"><span id="trackCount">0</span> tracks available</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs font-medium text-slate-400">Autoplay</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="autoplayToggle" class="sr-only peer" checked>
+                            <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:after:border-slate-600 peer-checked:bg-brand-600"></div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Search Input Filter -->
+                <div class="relative mb-4">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input type="text" id="searchInput" placeholder="Search songs or artists..." class="w-full pl-10 pr-4 py-2.5 bg-white/70 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/60 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/50 transition-all placeholder:text-slate-400">
+                </div>
+
+                <!-- Playlist Scrollable List -->
+                <div id="playlistContainer" class="space-y-2 max-h-[360px] lg:max-h-[440px] overflow-y-auto pr-1">
+                    <!-- Playlist Items Injected via JS -->
+                </div>
+            </div>
+
+            <!-- Footer Info -->
+            <div class="mt-6 pt-4 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-xs text-slate-400">
+                <span><i class="fa-solid fa-headphones mr-1"></i> Studio Audio HD</span>
+                <span>Press <kbd class="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-800 rounded font-mono text-[10px]">Space</kbd> to Play/Pause</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Audio Element -->
+    <audio id="audioPlayer" preload="metadata"></audio>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Sample Playlist with royalty-free audio files (SoundHelix / Free Music Archives)
+        const songs = [
+            {
+                id: 1,
+                title: "Electronic Synth Vibe",
+                artist: "SoundHelix",
+                album: "Cyber Dreams",
+                duration: "06:12",
+                cover: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500&auto=format&fit=crop&q=80",
+                url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+                genre: "Synthwave"
+            },
+            {
+                id: 2,
+                title: "Chill Ambient Journey",
+                artist: "SoundHelix",
+                album: "Deep Chill",
+                duration: "07:05",
+                cover: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=500&auto=format&fit=crop&q=80",
+                url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+                genre: "Ambient"
+            },
+            {
+                id: 3,
+                title: "Acoustic Sunset Groove",
+                artist: "SoundHelix",
+                album: "Unplugged Waves",
+                duration: "05:44",
+                cover: "https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=500&auto=format&fit=crop&q=80",
+                url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+                genre: "Acoustic"
+            },
+            
+            {
+                id: 5,
+                title: "Midnight Piano Odyssey",
+                artist: "SoundHelix",
+                album: "Nocturnal Echoes",
+                duration: "05:53",
+                cover: "https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=500&auto=format&fit=crop&q=80",
+                url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3",
+                genre: "Classical Fusion"
+            }
+        ];
+
+        // State variables
+        let currentSongIndex = 0;
+        let isPlaying = false;
+        let isShuffle = false;
+        let repeatMode = 0; // 0 = off, 1 = repeat playlist, 2 = repeat current track
+        let isMuted = false;
+        let previousVolume = 0.8;
+        let favorites = new Set();
+        let visualizerInterval = null;
+
+        // DOM Elements
+        const audio = document.getElementById('audioPlayer');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const playIcon = document.getElementById('playIcon');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const shuffleBtn = document.getElementById('shuffleBtn');
+        const shuffleIndicator = document.getElementById('shuffleIndicator');
+        const repeatBtn = document.getElementById('repeatBtn');
+        const repeatIcon = document.getElementById('repeatIcon');
+        const repeatIndicator = document.getElementById('repeatIndicator');
+        
+        const songTitle = document.getElementById('songTitle');
+        const artistName = document.getElementById('artistName');
+        const albumArt = document.getElementById('albumArt');
+        const albumCoverWrapper = document.getElementById('albumCoverWrapper');
+        const artGlow = document.getElementById('artGlow');
+        const genreBadge = document.getElementById('genreBadge');
+        
+        const progressBar = document.getElementById('progressBar');
+        const currentTimeEl = document.getElementById('currentTime');
+        const totalDurationEl = document.getElementById('totalDuration');
+        
+        const volumeSlider = document.getElementById('volumeSlider');
+        const volumeIcon = document.getElementById('volumeIcon');
+        const muteBtn = document.getElementById('muteBtn');
+        const volumePercent = document.getElementById('volumePercent');
+        
+        const playlistContainer = document.getElementById('playlistContainer');
+        const searchInput = document.getElementById('searchInput');
+        const trackCountEl = document.getElementById('trackCount');
+        const autoplayToggle = document.getElementById('autoplayToggle');
+        
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        const themeIcon = document.getElementById('themeIcon');
+        const favoriteBtn = document.getElementById('favoriteBtn');
+        const visualizerBars = document.querySelectorAll('.v-bar');
+
+        // Initialize Audio Player Application
+        function initPlayer() {
+            loadTrack(currentSongIndex);
+            renderPlaylist(songs);
+            setupEventListeners();
+            updateVolumeUI();
+        }
+
+        // Load track data into Player UI
+        function loadTrack(index) {
+            currentSongIndex = index;
+            const song = songs[currentSongIndex];
+
+            songTitle.textContent = song.title;
+            artistName.textContent = `${song.artist} • ${song.album}`;
+            albumArt.src = song.cover;
+            genreBadge.textContent = song.genre;
+            audio.src = song.url;
+
+            // Reset progress bar
+            progressBar.value = 0;
+            currentTimeEl.textContent = "00:00";
+            totalDurationEl.textContent = song.duration;
+
+            // Highlight Active Song in Playlist
+            updateActivePlaylistItem();
+
+            // Check favorite state
+            updateFavoriteUI();
+        }
+
+        // Render Playlist with Search Filtering
+        function renderPlaylist(songList) {
+            playlistContainer.innerHTML = '';
+            trackCountEl.textContent = songList.length;
+
+            if (songList.length === 0) {
+                playlistContainer.innerHTML = `
+                    <div class="text-center py-8 text-slate-400">
+                        <i class="fa-solid fa-music-slash text-2xl mb-2"></i>
+                        <p class="text-sm">No songs found</p>
+                    </div>
+                `;
+                return;
+            }
+
+            songList.forEach((song) => {
+                const isCurrent = songs[currentSongIndex].id === song.id;
+                const item = document.createElement('div');
+                item.className = `playlist-item flex items-center justify-between p-3 rounded-2xl cursor-pointer transition-all duration-200 group ${
+                    isCurrent 
+                        ? 'bg-brand-500/10 dark:bg-brand-500/20 border border-brand-500/30' 
+                        : 'hover:bg-white/60 dark:hover:bg-slate-800/50 border border-transparent'
+                }`;
+
+                item.onclick = () => {
+                    const actualIndex = songs.findIndex(s => s.id === song.id);
+                    if (actualIndex !== -1) {
+                        loadTrack(actualIndex);
+                        playTrack();
+                    }
+                };
+
+                item.innerHTML = `
+                    <div class="flex items-center space-x-3 overflow-hidden">
+                        <div class="relative w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 shadow-sm">
+                            <img src="${song.cover}" alt="${song.title}" class="w-full h-full object-cover">
+                            ${isCurrent && isPlaying ? `
+                                <div class="absolute inset-0 bg-brand-600/60 flex items-center justify-center">
+                                    <i class="fa-solid fa-waveform text-white text-sm animate-pulse"></i>
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="truncate">
+                            <h4 class="text-sm font-bold truncate ${isCurrent ? 'text-brand-600 dark:text-brand-400' : 'text-slate-800 dark:text-slate-200'}">${song.title}</h4>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 truncate">${song.artist}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3 flex-shrink-0">
+                        <span class="text-xs font-semibold text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300">${song.duration}</span>
+                    </div>
+                `;
+
+                playlistContainer.appendChild(item);
+            });
+        }
+
+        // Highlight currently playing item
+        function updateActivePlaylistItem() {
+            renderPlaylist(getFilteredSongs());
+        }
+
+        // Filter Songs based on search query
+        function getFilteredSongs() {
+            const query = searchInput.value.toLowerCase().trim();
+            if (!query) return songs;
+            return songs.filter(song => 
+                song.title.toLowerCase().includes(query) || 
+                song.artist.toLowerCase().includes(query) ||
+                song.genre.toLowerCase().includes(query)
+            );
+        }
+
+        // Toggle Play / Pause state
+        function togglePlayPause() {
+            if (isPlaying) {
+                pauseTrack();
+            } else {
+                playTrack();
+            }
+        }
+
+        function playTrack() {
+            audio.play().then(() => {
+                isPlaying = true;
+                playIcon.className = "fa-solid fa-pause text-2xl";
+                albumCoverWrapper.classList.add("animate-spin-slow");
+                artGlow.classList.remove("opacity-40");
+                artGlow.classList.add("opacity-80");
+                startVisualizer();
+                updateActivePlaylistItem();
+            }).catch((err) => {
+                console.warn("Autoplay blocked or audio load error:", err);
+            });
+        }
+
+        function pauseTrack() {
+            audio.pause();
+            isPlaying = false;
+            playIcon.className = "fa-solid fa-play text-2xl ml-1";
+            albumCoverWrapper.classList.remove("animate-spin-slow");
+            artGlow.classList.remove("opacity-80");
+            artGlow.classList.add("opacity-40");
+            stopVisualizer();
+            updateActivePlaylistItem();
+        }
+
+        // Next Track Logic
+        function nextTrack() {
+            if (isShuffle) {
+                currentSongIndex = getRandomIndex();
+            } else {
+                currentSongIndex = (currentSongIndex + 1) % songs.length;
+            }
+            loadTrack(currentSongIndex);
+            playTrack();
+        }
+
+        // Previous Track Logic
+        function prevTrack() {
+            if (audio.currentTime > 3) {
+                audio.currentTime = 0;
+                return;
+            }
+            if (isShuffle) {
+                currentSongIndex = getRandomIndex();
+            } else {
+                currentSongIndex = (currentSongIndex - 1 + songs.length) % songs.length;
+            }
+            loadTrack(currentSongIndex);
+            playTrack();
+        }
+
+        function getRandomIndex() {
+            if (songs.length <= 1) return 0;
+            let randomIndex;
+            do {
+                randomIndex = Math.floor(Math.random() * songs.length);
+            } while (randomIndex === currentSongIndex);
+            return randomIndex;
+        }
+
+        // Time Formatting Helper (MM:SS)
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return "00:00";
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        // Progress Bar & Time Update
+        function updateProgress() {
+            if (audio.duration) {
+                const percent = (audio.currentTime / audio.duration) * 100;
+                progressBar.value = percent;
+                currentTimeEl.textContent = formatTime(audio.currentTime);
+                totalDurationEl.textContent = formatTime(audio.duration);
+            }
+        }
+
+        // Seek Audio Track Position
+        function setProgress() {
+            if (audio.duration) {
+                audio.currentTime = (progressBar.value / 100) * audio.duration;
+            }
+        }
+
+        // Volume Controls
+        function setVolume() {
+            audio.volume = volumeSlider.value;
+            previousVolume = audio.volume;
+            isMuted = audio.volume === 0;
+            updateVolumeUI();
+        }
+
+        function toggleMute() {
+            if (isMuted) {
+                audio.volume = previousVolume > 0 ? previousVolume : 0.8;
+                volumeSlider.value = audio.volume;
+                isMuted = false;
+            } else {
+                previousVolume = audio.volume;
+                audio.volume = 0;
+                volumeSlider.value = 0;
+                isMuted = true;
+            }
+            updateVolumeUI();
+        }
+
+        function updateVolumeUI() {
+            const vol = audio.volume;
+            volumePercent.textContent = `${Math.round(vol * 100)}%`;
+
+            if (vol === 0 || isMuted) {
+                volumeIcon.className = "fa-solid fa-volume-xmark text-sm text-pink-500";
+            } else if (vol < 0.5) {
+                volumeIcon.className = "fa-solid fa-volume-low text-sm";
+            } else {
+                volumeIcon.className = "fa-solid fa-volume-high text-sm";
+            }
+        }
+
+        // Visualizer Simulation Animation
+        function startVisualizer() {
+            stopVisualizer();
+            visualizerInterval = setInterval(() => {
+                visualizerBars.forEach(bar => {
+                    const randomHeight = Math.floor(Math.random() * 24) + 6;
+                    bar.style.height = `${randomHeight}px`;
+                });
+            }, 150);
+        }
+
+        function stopVisualizer() {
+            if (visualizerInterval) clearInterval(visualizerInterval);
+            visualizerBars.forEach(bar => {
+                bar.style.height = '6px';
+            });
+        }
+
+        // Setup All Event Listeners
+        function setupEventListeners() {
+            // Playback controls
+            playPauseBtn.addEventListener('click', togglePlayPause);
+            nextBtn.addEventListener('click', nextTrack);
+            prevBtn.addEventListener('click', prevTrack);
+
+            // Shuffle Toggle
+            shuffleBtn.addEventListener('click', () => {
+                isShuffle = !isShuffle;
+                shuffleIndicator.classList.toggle('hidden', !isShuffle);
+                shuffleBtn.classList.toggle('text-brand-500', isShuffle);
+                shuffleBtn.classList.toggle('text-slate-400', !isShuffle);
+            });
+
+            // Repeat Toggle 
+            repeatBtn.addEventListener('click', () => {
+                repeatMode = (repeatMode + 1) % 3;
+                if (repeatMode === 0) {
+                    repeatIndicator.classList.add('hidden');
+                    repeatIcon.className = "fa-solid fa-repeat";
+                    repeatBtn.classList.remove('text-brand-500');
+                    repeatBtn.classList.add('text-slate-400');
+                } else if (repeatMode === 1) {
+                    repeatIndicator.classList.remove('hidden');
+                    repeatIcon.className = "fa-solid fa-repeat";
+                    repeatBtn.classList.add('text-brand-500');
+                } else if (repeatMode === 2) {
+                    repeatIndicator.classList.remove('hidden');
+                    repeatIcon.className = "fa-solid fa-repeat-1";
+                    repeatBtn.classList.add('text-brand-500');
+                }
+            });
+
+            // Audio element events
+            audio.addEventListener('timeupdate', updateProgress);
+            audio.addEventListener('ended', () => {
+                if (repeatMode === 2) {
+                    // Repeat current song
+                    audio.currentTime = 0;
+                    playTrack();
+                } else if (autoplayToggle.checked) {
+                    // Autoplay next track
+                    nextTrack();
+                } else {
+                    pauseTrack();
+                }
+            });
+
+            // Range Sliders
+            progressBar.addEventListener('input', setProgress);
+            volumeSlider.addEventListener('input', setVolume);
+            muteBtn.addEventListener('click', toggleMute);
+
+            // Search Filter Listener
+            searchInput.addEventListener('input', () => {
+                renderPlaylist(getFilteredSongs());
+            });
+
+            // Theme Toggle
+            themeToggleBtn.addEventListener('click', () => {
+                const isDark = document.documentElement.classList.toggle('dark');
+                themeIcon.className = isDark ? "fa-solid fa-sun text-lg text-amber-400" : "fa-solid fa-moon text-lg";
+            });
+
+            // Favorites Toggle
+            favoriteBtn.addEventListener('click', () => {
+                const currentSong = songs[currentSongIndex];
+                if (favorites.has(currentSong.id)) {
+                    favorites.delete(currentSong.id);
+                } else {
+                    favorites.add(currentSong.id);
+                }
+                updateFavoriteUI();
+            });
+
+            // Keyboard Shortcuts
+            document.addEventListener('keydown', (e) => {
+                if (e.target.tagName === 'INPUT') return; // Don't trigger when typing in search
+                
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    togglePlayPause();
+                } else if (e.code === 'ArrowRight') {
+                    audio.currentTime = Math.min(audio.duration, audio.currentTime + 5);
+                } else if (e.code === 'ArrowLeft') {
+                    audio.currentTime = Math.max(0, audio.currentTime - 5);
+                } else if (e.code === 'ArrowUp') {
+                    e.preventDefault();
+                    audio.volume = Math.min(1, audio.volume + 0.05);
+                    volumeSlider.value = audio.volume;
+                    updateVolumeUI();
+                } else if (e.code === 'ArrowDown') {
+                    e.preventDefault();
+                    audio.volume = Math.max(0, audio.volume - 0.05);
+                    volumeSlider.value = audio.volume;
+                    updateVolumeUI();
+                }
+            });
+        }
+
+        function updateFavoriteUI() {
+            const currentSong = songs[currentSongIndex];
+            if (favorites.has(currentSong.id)) {
+                favoriteBtn.classList.remove('text-slate-400');
+                favoriteBtn.classList.add('text-pink-500');
+            } else {
+                favoriteBtn.classList.remove('text-pink-500');
+                favoriteBtn.classList.add('text-slate-400');
+            }
+        }
+
+        // Initialize application on page load
+        window.onload = initPlayer;
+    </script>
+</body>
+</html>
